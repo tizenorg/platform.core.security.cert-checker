@@ -1,0 +1,7 @@
+[Socket]
+ListenStream=/tmp/CertCheckerSocket
+SocketUser=system
+SocketUser=system
+SocketMode=0777
+
+Service=cert-checker.service

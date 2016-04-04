@@ -16,6 +16,7 @@
 /*
  * @file        logic.h
  * @author      Janusz Kozerski (j.kozerski@samsung.com)
+ *              Sangwan Kwon (sangwan.kwon@samsung.com)
  * @version     1.0
  * @brief       This file is the implementation of SQL queries
  */
@@ -130,6 +131,9 @@ class Logic {
 
         bool call_ui(const app_t &app);
 
+		// main event loop data type
+		GMainLoop *m_loop;
+
         Queue m_queue;
         Certs m_certs;
         std::list<app_t> m_buffer;
@@ -146,6 +150,7 @@ class Logic {
 
         GDBusProxy *m_proxy_connman;
 
+		// about pkgmgr event
         int m_reqid_install;
         int m_reqid_uninstall;
         std::unique_ptr<pkgmgrinfo_client, int(*)(pkgmgrinfo_client *)> m_pc_install;

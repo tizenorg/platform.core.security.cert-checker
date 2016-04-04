@@ -10,6 +10,7 @@ EnvironmentFile=-/etc/sysconfig/enlightenment
 Environment="ELM_SCALE=4.0"
 Type=simple
 ExecStart=/usr/bin/cert-checker
+Sockets=cert-checker.socket
 
 [Install]
 WantedBy=multi-user.target

@@ -25,6 +25,15 @@
 #include <string>
 #include <unistd.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <systemd/sd-daemon.h>
+
 #include <cchecker/log.h>
 
 #include <logic_.h>
@@ -50,11 +59,53 @@ std::string log_apps(std::list<app_t> &apps, std::list<app_t> buff)
     return ret;
 }
 
+void socketActivate()
+{
+	const char *CCHECKER_SOCK_PATH = "/tmp/CertCheckerSocket";
+	int sockfd = 0;
+	int clientLen = 0;
+	struct sockaddr_un clientaddr;
+
+	if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
+		fprintf(stderr, "Error in fuction socket()..");
+	}
+
+	int tmpSockLen = strlen(CCHECKER_SOCK_PATH);
+	// Todo : change bzero -> memset
+	bzero(&clientaddr, sizeof(clientaddr));
+	clientaddr.sun_family = AF_UNIX;
+	strncpy(clientaddr.sun_path, CCHECKER_SOCK_PATH, tmpSockLen);
+	clientaddr.sun_path[tmpSockLen] = '\0';
+	clientLen = sizeof(clientaddr);
+
+	struct timeval timeout;
+	timeout.tv_sec = 10;
+	timeout.tv_usec = 0;
+
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+			sizeof(timeout)) < 0) {
+		fprintf(stderr, "Error in SO_RCVTIMEO Socket Option..");
+	}
+	if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,
+			sizeof(timeout)) < 0) {
+		fprintf(stderr, "Error in SO_SNDTIMEO Socket Option..");
+	}
+	if (connect(sockfd, (struct sockaddr*)&clientaddr, clientLen) < 0) { 
+		fprintf(stderr, "Error in socket connect option..");
+	}
+
+	int ret = close(sockfd);
+	fprintf(stderr, "close ret : %d \n", ret); 
+}
 } //anonymus
 
 BOOST_FIXTURE_TEST_SUITE(LOGIC_TEST, LogicWrapper)
 
+BOOST_AUTO_TEST_CASE(socket_activation) {
+	socketActivate();
+}
 
+/*
 BOOST_AUTO_TEST_CASE(logic_setup) {
 
     BOOST_REQUIRE(setup() == NO_ERROR);
@@ -448,5 +499,5 @@ BOOST_AUTO_TEST_CASE(logic_workflow_OCSP_APP_REVOKED_2) {
     buff = get_buffer_();
     BOOST_CHECK_MESSAGE(buff == apps, log_apps(apps, buff));
 }
-
+*/
 BOOST_AUTO_TEST_SUITE_END()

@@ -25,23 +25,41 @@
 #include <cchecker/log.h>
 #include <cchecker/logic.h>
 
+#include <sys/socket.h>
+#include <systemd/sd-daemon.h>
+
 using namespace CCHECKER;
+
+void CertSvcGetSocketFromSystemd(int *pSockfd)
+{
+       int n = sd_listen_fds(0);
+       int fd;
+
+		LogDebug("===================== n : " << n); 
+       LogError("GetSocketFromSystemd!");
+       LogError("file descriptor : " << n);
+       for (fd = SD_LISTEN_FDS_START; fd < SD_LISTEN_FDS_START+n; ++fd) {
+               if (0 < sd_is_socket_unix(fd, SOCK_STREAM, 1, "/tmp/CertCheckerSocket", 0)) {
+                       *pSockfd = fd;
+               }
+       }
+}
 
 int main(void)
 {
     LogDebug("Cert-checker start!");
 
     setlocale(LC_ALL, "");
-    GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
+
+	int ret;
+	CertSvcGetSocketFromSystemd(&ret);
+	LogDebug("===================== fd : " << ret); 
 
     Logic logic;
     if (logic.setup() != NO_ERROR) {
         LogError("Cannot setup logic. Exit cert-checker!");
         return -1;
     }
-
-    LogDebug("Running the main loop");
-    g_main_loop_run(main_loop);
 
     LogDebug("Cert-checker exit!");
     return 0;

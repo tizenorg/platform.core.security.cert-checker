@@ -72,31 +72,27 @@ cp -a %{SOURCE1} %{buildroot}%{TZ_SYS_RO_SHARE}/
 %find_lang %{name}
 
 %make_install
-mkdir -p %{buildroot}%{_unitdir}/multi-user.target.wants
-ln -s ../cert-checker.service %{buildroot}%{_unitdir}/multi-user.target.wants/cert-checker.service
-
-%clean
-rm -rf %{buildroot}
-
-%post
-systemctl daemon-reload
-if [ $1 = 1 ]; then
-    # installation
-    systemctl start cert-checker.service
-fi
-
-if [ $1 = 2 ]; then
-    # update
-    systemctl restart cert-checker.service
-fi
-chsmack -a System %{DB_INST_DIR}
-chsmack -a System %{DB_INST_DIR}/.cert-checker.db
 
 %preun
+# erase
 if [ $1 = 0 ]; then
-    # unistall
     systemctl stop cert-checker.service
 fi
+
+%post
+/sbin/ldconfig
+systemctl daemon-reload
+# install
+if [ $1 = 1 ]; then
+    systemctl start cert-checker.service
+fi
+# upgrade / reinstall
+if [ $1 = 2 ]; then
+    systemctl restart cert-checker.service
+fi
+
+chsmack -a System %{DB_INST_DIR}
+chsmack -a System %{DB_INST_DIR}/.cert-checker.db
 
 %postun
 if [ $1 = 0 ]; then
@@ -104,6 +100,8 @@ if [ $1 = 0 ]; then
     systemctl daemon-reload
 fi
 
+%clean
+rm -rf %{buildroot}
 
 %files -f %{name}.lang
 %{TZ_SYS_BIN}/cert-checker
@@ -113,7 +111,7 @@ fi
 %dir %attr(0700,security_fw,security_fw) %{DB_INST_DIR}
 %config(noreplace) %attr(0600,security_fw,security_fw) %{DB_INST_DIR}/.cert-checker.db
 %{_unitdir}/cert-checker.service
-%{_unitdir}/multi-user.target.wants/cert-checker.service
+%{_unitdir}/cert-checker.socket
 
 %files -n cert-checker-tests
 %license LICENSE.BSL-1.0
