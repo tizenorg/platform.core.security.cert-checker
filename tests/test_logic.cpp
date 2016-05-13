@@ -64,8 +64,11 @@ BOOST_AUTO_TEST_CASE(logic_setup) {
     BOOST_REQUIRE(setup() == INTERNAL_ERROR);
 }
 
+// -- senario 1 --
+// 1. no network
+// 2. several event occur
+// 3. turn on network -> process -> buffer empty
 BOOST_AUTO_TEST_CASE(logic_workflow_mixed) {
-
     BOOST_REQUIRE(setup() == NO_ERROR);
 
     wait_for_worker();
@@ -122,6 +125,11 @@ BOOST_AUTO_TEST_CASE(logic_workflow_mixed) {
     BOOST_CHECK(buff.empty());
 }
 
+// -- senario 2 --
+// 1. no network
+// 2. several event occur
+// 3. turn on network -> process
+// 3-1. OCSP_CHECK_AGAIN -> buffer should remain
 BOOST_AUTO_TEST_CASE(logic_workflow_mixed_2) {
 
     BOOST_REQUIRE(setup() == NO_ERROR);
@@ -129,7 +137,7 @@ BOOST_AUTO_TEST_CASE(logic_workflow_mixed_2) {
     wait_for_worker();
 
     // turn off the network
-    connman_callback_manual_(true);
+    connman_callback_manual_(false);
 
     // add applications:
     app_t app1("app_1", "pkg_1", 5001, {});
@@ -146,6 +154,9 @@ BOOST_AUTO_TEST_CASE(logic_workflow_mixed_2) {
 
     app_t app5("app_5", "pkg_5", 100, {{"OCSP_APP_REVOKED"}}); // popup will fail
     pkgmgr_install_manual_(app5);
+
+    // turn on the Internet - buffer should be processed
+    connman_callback_manual_(true);
 
     wait_for_worker(5, 0, 5);
     std::list<app_t> buff = get_buffer_();
@@ -295,7 +306,7 @@ BOOST_AUTO_TEST_CASE(logic_workflow_OCSP_CHECK_AGAIN) {
 
     connman_callback_manual_(false);
 
-    wait_for_worker(0, 0, 0);
+    wait_for_worker(0, 0, 4);
 
     buff = get_buffer_();
     BOOST_CHECK_MESSAGE(buff == apps, log_apps(apps, buff));
